@@ -16,14 +16,16 @@ class Game
             y: 360,
             w: 32,
             h:32,
-            path: "sprites/circle/blue.png"
+            path: "sprites/circle/blue.png",
+            speed: 10
         })
-        enemy_prefab = Unit.new({
+        enemy_prefab = Enemy.new({
             x: 620,
             y: 360,
             w: 32,
             h:32,
-            path: "sprites/circle/red.png"
+            path: "sprites/circle/red.png",
+            speed: 6
         })
         @state.spawners << Spawner.new({
             x: 100,
@@ -73,14 +75,19 @@ class Game
     def logic()
         @state.spawners.each do |spawner|
             spawner.spawn_enemy(@state, @state.tick_count)
+            @state.unit.check_collision_with_class(spawner)
         end
 
         @state.enemies.each do |enemy|
+            enemy.get_move_vector_from_class(@state.unit)
+
             @state.unit.check_collision_with_class(enemy)
             enemy.check_collision_with_class(@state.unit)
+
+            enemy.move_this_tick()
         end
 
-        @state.unit.move_player_this_tick()
+        @state.unit.move_this_tick()
         @state.unit.fire_projectile(@state, @inputs, @state.projectiles)
 
         @state.projectiles.each do |projectile|

@@ -1,6 +1,7 @@
 class Unit 
     attr_sprite
-    attr_accessor :velocity, :fire_direction, :fire_cooldown
+    attr_accessor :velocity, :fire_direction, :fire_cooldown, :health, 
+    :melee_cooldown
 
 
     def initialize(init_args)
@@ -16,7 +17,7 @@ class Unit
     end
 
 
-    def move_player_this_tick()
+    def move_this_tick()
         @x += @velocity[:x]
         @y += @velocity[:y]
     end
@@ -103,7 +104,7 @@ class Unit
 
 
     def serialize()
-        {}
+        { x: @x, y: @y, w: @w, h: @h, path: @path, }
     end
 
 
