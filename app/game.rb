@@ -7,6 +7,9 @@ class Game
         @inputs = init_args[:inputs]
         @grid = init_args[:grid]
         @outputs = init_args[:outputs]
+
+        @state.enemies = []
+        @state.spawners = []
         
         @state.unit = Unit.new({
             x: 620,
@@ -15,7 +18,24 @@ class Game
             h:32,
             path: "sprites/circle/blue.png"
         })
-        @state.enemy_prefab
+        enemy_prefab = Unit.new({
+            x: 620,
+            y: 360,
+            w: 32,
+            h:32,
+            path: "sprites/circle/red.png"
+        })
+        @state.spawners << Spawner.new({
+            x: 100,
+            y: 100,
+            w: 32,
+            h: 32,
+            path: "sprites/square/red.png",
+            spawn_interval: 3,
+            health: 4,
+            enemy_prefab: enemy_prefab
+
+        })
         @state.level_holder = Level_Holder.new()
         @state.projectiles = []
         @state.projectile_speed = 10
@@ -39,12 +59,27 @@ class Game
         @outputs.sprites << @state.projectiles.map do |projectile|
             projectile[:sprite]
         end
+        @outputs.sprites << @state.spawners.map do |spawner|
+            spawner
+        end
+        @outputs.sprites << @state.enemies.map do |enemy|
+            enemy
+        end
 
         @outputs.sprites << @state.unit
     end
 
 
     def logic()
+        @state.spawners.each do |spawner|
+            spawner.spawn_enemy(@state, @state.tick_count)
+        end
+
+        @state.enemies.each do |enemy|
+            @state.unit.check_collision_with_class(enemy)
+            enemy.check_collision_with_class(@state.unit)
+        end
+
         @state.unit.move_player_this_tick()
         @state.unit.fire_projectile(@state, @inputs, @state.projectiles)
 

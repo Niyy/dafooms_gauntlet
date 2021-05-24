@@ -17,28 +17,51 @@ class Unit
 
 
     def move_player_this_tick()
-        @x += velocity[:x]
-        @y += velocity[:y]
+        @x += @velocity[:x]
+        @y += @velocity[:y]
     end
 
 
     def add_move_velocity(inputs, state)
-        velocity[:x] = 0
-        velocity[:y] = 0
+        @velocity[:x] = 0
+        @velocity[:y] = 0
 
         if(inputs.keyboard.key_held.w)
-            velocity[:y] += @speed
+            @velocity[:y] += @speed
         end
         if(inputs.keyboard.key_held.s)
-            velocity[:y] += -@speed
+            @velocity[:y] += -@speed
         end
 
         if(inputs.keyboard.key_held.d)
-            velocity[:x] += @speed
+            @velocity[:x] += @speed
         end
         if(inputs.keyboard.key_held.a)
-            velocity[:x] += -@speed
+            @velocity[:x] += -@speed
         end
+    end
+
+
+    def check_collision_with_class(col_object)
+        x_rect = [@x + @velocity[:x], @y, @w, @h]
+        y_rect = [@x, @y + @velocity[:y], @w, @h]
+
+        if(x_rect.intersect_rect?(col_object.rect()))
+            @velocity[:x] = 0
+        end
+        if(y_rect.intersect_rect?(col_object.rect()))
+            @velocity[:y] = 0
+        end
+    end
+
+
+    def check_collision_with_object(col_object)
+
+    end
+
+
+    def rect()
+        [@x, @y, @w, @h]
     end
 
 
