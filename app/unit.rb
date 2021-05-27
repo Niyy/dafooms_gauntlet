@@ -1,7 +1,10 @@
-class Unit 
+require 'app/base.rb'
+
+
+class Unit < Base
     attr_sprite
     attr_accessor :velocity, :fire_direction, :fire_cooldown, :health, 
-    :melee_cooldown
+    :melee_cooldown, :projectile_damage, :melee_damage, :next_melee
 
 
     def initialize(init_args)
@@ -10,8 +13,17 @@ class Unit
         @w = init_args[:w]
         @h = init_args[:h]
         @path = init_args[:path]
+        @projectile_damage = !init_args[:projectile_damage].nil? ? 
+            init_args[:projectile_damage] : 1
+        @melee_cooldown = !init_args[:melee_cooldown].nil? ?
+            init_args[:melee_cooldown] : 10
+        @melee_damage = !init_args[:melee_damage].nil? ?
+            init_args[:melee_damage] : 1
+        @next_melee = !init_args[:next_melee].nil? ?
+            init_args[:next_melee] : 0
         @velocity = {x: 0, y: 0}
         @fire_cooldown = 0
+        @next_melee = 0
 
         @speed = !init_args[:speed].nil? ? init_args[:speed] : 3
     end
@@ -43,21 +55,22 @@ class Unit
     end
 
 
-    def check_collision_with_class(col_object)
+    def check_movement_collision(obj_rect, obj, tick_count)
         x_rect = [@x + @velocity[:x], @y, @w, @h]
         y_rect = [@x, @y + @velocity[:y], @w, @h]
 
-        if(x_rect.intersect_rect?(col_object.rect()))
+        if(x_rect.intersect_rect?(obj_rect))
             @velocity[:x] = 0
+            if(melee_damage?(tick_count))
+                obj.damage(@melee_damage)
+            end
         end
-        if(y_rect.intersect_rect?(col_object.rect()))
+        if(y_rect.intersect_rect?(obj_rect))
             @velocity[:y] = 0
+            if(melee_damage?(tick_count))
+                obj.damage(@melee_damage)
+            end
         end
-    end
-
-
-    def check_collision_with_object(col_object)
-
     end
 
 
@@ -77,7 +90,8 @@ class Unit
                 path: "sprites/circle/black.png"
             },
             fire_direction: @fire_direction,
-            tags: ["PROJECTILE", "PLAYER"]
+            tags: ["PROJECTILE", "PLAYER"],
+            damage: @projectile_damage
         }
     end
 
@@ -103,8 +117,18 @@ class Unit
     end
 
 
+    def melee_damage?(tick_count)
+        if(@next_melee <= tick_count)
+            @next_melee = tick_count + @melee_cooldown
+            return true
+        end
+
+        return false
+    end
+
+
     def serialize()
-        { x: @x, y: @y, w: @w, h: @h, path: @path, }
+        { x: @x, y: @y, w: @w, h: @h, path: @path, next_melee: @next_melee }
     end
 
 

@@ -1,4 +1,7 @@
-class Spawner
+require 'app/base.rb'
+
+
+class Spawner < Base
     attr_sprite
     attr_accessor :health, :spawn_interval, :enemy_prefab
 
@@ -11,7 +14,7 @@ class Spawner
         @path = init_args[:path]
         @spawn_interval = init_args[:spawn_interval]
         @enemy_prefab = init_args[:enemy_prefab]
-        @health = init_args[:health]
+        @health = !init_args[:health].nil? ? init_args[:health] : 1
     end
 
 

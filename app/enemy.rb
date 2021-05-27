@@ -10,7 +10,7 @@ class Enemy < Unit
         y_comp = (target.y - @y)
         mag = Math.sqrt(x_comp**2 + y_comp**2)
 
-        @velocity[:x] = x_comp / mag
-        @velocity[:y] = y_comp / mag
+        @velocity[:x] = (x_comp / mag) * @speed
+        @velocity[:y] = (y_comp / mag) * @speed
     end
 end

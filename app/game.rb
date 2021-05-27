@@ -17,7 +17,7 @@ class Game
             w: 32,
             h:32,
             path: "sprites/circle/blue.png",
-            speed: 10
+            speed: 6
         })
         enemy_prefab = Enemy.new({
             x: 620,
@@ -25,7 +25,7 @@ class Game
             w: 32,
             h:32,
             path: "sprites/circle/red.png",
-            speed: 6
+            speed: 4
         })
         @state.spawners << Spawner.new({
             x: 100,
@@ -58,31 +58,36 @@ class Game
         @outputs.sprites << @state.level_holder.level.values.map do |tile|
             tile[:sprite]
         end
-        @outputs.sprites << @state.projectiles.map do |projectile|
-            projectile[:sprite]
-        end
-        @outputs.sprites << @state.spawners.map do |spawner|
-            spawner
-        end
-        @outputs.sprites << @state.enemies.map do |enemy|
-            enemy
-        end
-
-        @outputs.sprites << @state.unit
+#        @outputs.sprites << @state.projectiles.map do |projectile|
+#            projectile[:sprite]
+#        end
+#        @outputs.sprites << @state.spawners.map do |spawner|
+#            spawner
+#        end
+#        @outputs.sprites << @state.enemies.map do |enemy|
+#            enemy
+#        end
+#
+#        @outputs.sprites << @state.unit
     end
 
 
     def logic()
         @state.spawners.each do |spawner|
             spawner.spawn_enemy(@state, @state.tick_count)
-            @state.unit.check_collision_with_class(spawner)
+            @state.unit.check_movement_collision(rect(spawner), spawner, 
+                @state.tick_count)
         end
 
-        @state.enemies.each do |enemy|
+        @state.enemies.each.with_index do |enemy, enemy_index|
+            if(enemy.health <= 0)
+                @state.enemies.delete_at(enemy_index)
+            end
+
             enemy.get_move_vector_from_class(@state.unit)
 
-            @state.unit.check_collision_with_class(enemy)
-            enemy.check_collision_with_class(@state.unit)
+            @state.unit.check_movement_collision(enemy, enemy, @state.tick_count)
+            enemy.check_movement_collision(@state.unit, @state.unit, @state.tick_count)
 
             enemy.move_this_tick()
         end
@@ -90,12 +95,37 @@ class Game
         @state.unit.move_this_tick()
         @state.unit.fire_projectile(@state, @inputs, @state.projectiles)
 
-        @state.projectiles.each do |projectile|
+        @state.projectiles.each.with_index do |projectile, index|
             projectile[:sprite][:x] += projectile[:fire_direction][:x] * 
                 @state.projectile_speed
             projectile[:sprite][:y] += projectile[:fire_direction][:y] * 
                 @state.projectile_speed
+
+            @state.enemies.each.with_index do |enemy, enemy_index|
+                check_projectile_collision(enemy, projectile, index)
+            end
+
+            @state.spawners.each.with_index do |spawner, spawner_index|
+                check_projectile_collision(spawner, projectile, index)
+
+                if(spawner.health <= 0)
+                    @state.spawners.delete_at(spawner_index)
+                end
+            end
         end
+    end
+
+
+    def check_projectile_collision(object, projectile, projectile_index)
+        if(projectile[:sprite].intersect_rect?(rect(object)))
+            object.damage(projectile[:damage])
+            @state.projectiles.delete_at(projectile_index)
+        end
+    end
+
+
+    def rect(class_object)
+        [class_object.x, class_object.y, class_object.w, class_object.h]
     end
 
 

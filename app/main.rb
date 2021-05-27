@@ -9,5 +9,5 @@ def tick args
     grid: args.grid
   })
 
-  $game.tick()
+  $game.tick() if($gtk.reloaded_files.empty?)
 end
