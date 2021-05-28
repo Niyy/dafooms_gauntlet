@@ -36,7 +36,6 @@ class Game
             spawn_interval: 3,
             health: 4,
             enemy_prefab: enemy_prefab
-
         })
         @state.level_holder = Level_Holder.new()
         @state.projectiles = []
@@ -45,7 +44,11 @@ class Game
 
     
     def set_up()
-        @state.level_holder.generate_level({x: 32, y: 32}, {x: 20, y: 20})
+        @state.level_holder.generate_level({
+            dimensions: {x: 32, y: 32}, 
+            size: {x: 20, y: 20},
+            min_room_size: [5, 5]
+        })
     end
 
 
@@ -56,7 +59,14 @@ class Game
 
     def renders()
         @outputs.sprites << @state.level_holder.level.values.map do |tile|
-            tile[:sprite]
+            tile[:sprite]        
+        end
+        @outputs.labels << @state.level_holder.rooms.to_a.map do |room|
+            [
+                room[1][:x_median] * @state.level_holder.dimensions[:x] + 6, 
+                room[1][:y_median] * @state.level_holder.dimensions[:y] + 25, 
+                "#{room[0]}"
+            ]
         end
 #        @outputs.sprites << @state.projectiles.map do |projectile|
 #            projectile[:sprite]
