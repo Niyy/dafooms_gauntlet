@@ -1,5 +1,5 @@
 class Level_Holder 
-    attr_accessor :level, :dimensions, :size, :adj, :rooms
+    attr_accessor :level, :dimensions, :size, :adj, :rooms, :width, :height
 
 
     def initialize()
@@ -16,18 +16,20 @@ class Level_Holder
         @dimensions = !init_args[:dimensions].nil? ? init_args[:dimensions] : [5, 5]
         @size = !init_args[:size].nil? ? init_args[:size] : [10, 10]
         min_room_size = !init_args[:min_room_size].nil? ? 
-            init_args[:min_room_size] : [5, 5] 
+            init_args[:min_room_size] : [5, 5]
         @color_marks = [
             (min_room_size[0] * 255) / dimensions[:x], 
             (min_room_size[1] * 255) / dimensions[:y]
         ]
+        @width = @size[:x] / min_room_size[0]
+        @height = @size[:y] / min_room_size[1]
 
         (0...size[:y]).each do |row|
             (0...size[:x]).each do |col|
                 @level[[row, col]] = {
                     sprite: {
-                        x: row * dimensions[:x],
-                        y: col * dimensions[:y],
+                        x: col * dimensions[:x],
+                        y: row * dimensions[:y],
                         w: dimensions[:x],
                         h: dimensions[:y],
                         path: "sprites/square/white.png",
@@ -56,17 +58,17 @@ class Level_Holder
 #            puts "--------#{key}----------"
 #            puts "x_median: #{room[:x_median]}, y_median: #{room[:y_median]}"
 
-            @adj[key] ||= []
+            @adj[key] ||= {} 
 
-            up_key = counter < 3 ? key + 1 : -1   
-            down_key =  counter != 0? key - 1 : -1
-            left_key = key - (min_room_size[1] - 1)
-            right_key = key + (min_room_size[1] - 1)
+            up_key = (key + 1) % @height != 0 ? key + 1 : -1   
+            down_key = (key) % @height != 0 ? key - 1 : -1
+            right_key = key + (@width)
+            left_key = key - (@width)
 
-            @adj[key] << up_key if(@rooms.has_key?(up_key)) 
-            @adj[key] << down_key if(@rooms.has_key?(down_key)) 
-            @adj[key] << left_key if(@rooms.has_key?(left_key)) 
-            @adj[key] << right_key if(@rooms.has_key?(right_key)) 
+            @adj[key][up_key] = up_key if(@rooms.has_key?(up_key)) 
+            @adj[key][down_key] = down_key if(@rooms.has_key?(down_key)) 
+            @adj[key][left_key] = left_key if(@rooms.has_key?(left_key)) 
+            @adj[key][right_key] = right_key if(@rooms.has_key?(right_key)) 
 
             counter += 1;
             counter = 0 if(counter == 4)
@@ -75,10 +77,10 @@ class Level_Holder
 
 
     def assign_tile_to_room(min_room_size, tile, tile_coord)
-        room_x = (tile_coord[1] / min_room_size[0]).floor()
-        room_y = (tile_coord[0] / min_room_size[1]).floor()
+        room_col = (tile_coord[1] / min_room_size[1]).floor()
+        room_row = (tile_coord[0] / min_room_size[0]).floor()
 
-        room_number = room_x + (room_y * (min_room_size[0] - 1))
+        room_number = room_row + (room_col * @width).floor()
         @rooms[room_number] ||= {}
         room = @rooms[room_number]
 
@@ -87,8 +89,8 @@ class Level_Holder
         room[:y_median] ||= 0
         room[:tiles] << tile
 
-        tile[:sprite][:r] = (@color_marks[0] * room_x)
-        tile[:sprite][:g] = (@color_marks[1] * room_y)
+        tile[:sprite][:r] = (@color_marks[1] * room_col)
+        tile[:sprite][:g] = (@color_marks[0] * room_row)
 
         room[:x_median] += tile[:sprite][:x]
         room[:y_median] += tile[:sprite][:y]
@@ -101,7 +103,7 @@ class Level_Holder
             return false
         end
 
-        adj_room_consume = @adj[random_room].sample()
+        adj_room_consume = @adj[random_room].keys.sample()
 
         @rooms[adj_room_consume][:tiles].each do |tile|
             tile[:sprite][:r] = @rooms[random_room][:tiles][0][:sprite][:r]
@@ -109,29 +111,29 @@ class Level_Holder
             @rooms[random_room][:tiles] << tile
         end
 
-        @rooms.delete(adj_room_consume)
-        @adj[random_room].delete(adj_room_consume)
+        @adj[adj_room_consume].keys.each do |adj_room|
+            puts "Adj_room(#{adj_room}) to consumed room(#{adj_room_consume})"
 
-        @adj[adj_room_consume].each do |adj_room|
-            @adj[adj_room].delete(adj_room_consume)
+            puts @adj[adj_room].delete(adj_room_consume)
             if(adj_room != random_room)
-                if(!exists(adj_room, random_room))
-                    @adj[adj_room] << random_room 
+                if(!@adj[adj_room].has_key?(random_room))
+                    @adj[adj_room][random_room] = random_room
                 end
-                if(!exists(random_room, adj_room))
-                    @adj[random_room] << adj_room
+                if(!@adj[adj_room].has_key?(adj_room))
+                    @adj[random_room][adj_room] = adj_room
                 end
             end
         end
 
         @adj.delete(adj_room_consume)
+        @rooms.delete(adj_room_consume)
 
         return true
     end
 
 
     def exists(index, value)
-        @adj[index].each do |child|
+        @adj[index].values.each do |child|
             if(child == value)
                 return true
             end

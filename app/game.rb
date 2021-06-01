@@ -47,7 +47,7 @@ class Game
         @state.level_holder.generate_level({
             dimensions: {x: 32, y: 32}, 
             size: {x: 20, y: 20},
-            min_room_size: [5, 5]
+            min_room_size: [4, 4]
         })
 
         @state.level_holder.define_level_layout(4)
