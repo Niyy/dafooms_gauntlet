@@ -33,9 +33,13 @@ class Level_Holder
                         w: dimensions[:x],
                         h: dimensions[:y],
                         path: "sprites/square/white.png",
-                        r: 255,
+                        r: 0,
                         g: 0,
                         b: 0 
+                    },
+                    tile: {
+                        row: row, 
+                        col: col
                     }
                 }
 
@@ -84,10 +88,10 @@ class Level_Holder
         @rooms[room_number] ||= {}
         room = @rooms[room_number]
 
-        room[:tiles] ||= []
+        room[:tiles] ||= {} 
         room[:x_median] ||= 0
         room[:y_median] ||= 0
-        room[:tiles] << tile
+        room[:tiles][tile_coord] = tile
 
         tile[:sprite][:r] = (@color_marks[1] * room_col)
         tile[:sprite][:g] = (@color_marks[0] * room_row)
@@ -104,17 +108,16 @@ class Level_Holder
         end
 
         adj_room_consume = @adj[random_room].keys.sample()
+        tile_in_room = @rooms[random_room][:tiles].keys.sample()
 
-        @rooms[adj_room_consume][:tiles].each do |tile|
-            tile[:sprite][:r] = @rooms[random_room][:tiles][0][:sprite][:r]
-            tile[:sprite][:g] = @rooms[random_room][:tiles][0][:sprite][:g]
-            @rooms[random_room][:tiles] << tile
+        @rooms[adj_room_consume][:tiles].each_pair do |key, tile|
+            tile[:sprite][:r] = @rooms[random_room][:tiles][tile_in_room][:sprite][:r]
+            tile[:sprite][:g] = @rooms[random_room][:tiles][tile_in_room][:sprite][:g]
+            @rooms[random_room][:tiles][key] = tile
         end
 
         @adj[adj_room_consume].keys.each do |adj_room|
-            puts "Adj_room(#{adj_room}) to consumed room(#{adj_room_consume})"
-
-            puts @adj[adj_room].delete(adj_room_consume)
+            @adj[adj_room].delete(adj_room_consume)
             if(adj_room != random_room)
                 if(!@adj[adj_room].has_key?(random_room))
                     @adj[adj_room][random_room] = random_room
@@ -146,15 +149,36 @@ class Level_Holder
     def define_level_layout(min_room_count)
         while(@rooms.size - 1 >= min_room_count)
             if(!combine_rooms())
-                return
+                break
+            end
+        end
+
+        place_walls()
+    end
+
+
+    def place_walls()
+        @rooms.values.each do |room|
+            room[:tiles].each_pair do |key, tile|
+                if(has_border?(room[:tiles], tile[:tile]))
+                    tile[:sprite][:r] = 255
+                    tile[:sprite][:g] = 255
+                end
             end
         end
     end
 
 
-    def place_walls()
-        @rooms.each do |room|
-        end
+    def has_border?(tiles, tile)
+        up = [tile[:row] + 1, tile[:col]]
+        down = [tile[:row] - 1, tile[:col]]
+        left = [tile[:row], tile[:col] - 1]
+        right = [tile[:row], tile[:col] + 1]
+
+        return !(tiles.has_key?(up) && 
+        tiles.has_key?(down) && 
+        tiles.has_key?(left) && 
+        tiles.has_key?(right))
     end
 
 
