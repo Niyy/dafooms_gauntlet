@@ -95,29 +95,64 @@ class Level_Holder
     end
 
 
-    def combine_rooms(max_room_count)
+    def combine_rooms()
         random_room = @rooms.keys.to_a.sample()
+        if(@adj[random_room].size <= 0)
+            return false
+        end
+
         adj_room_consume = @adj[random_room].sample()
 
-        puts "Room Chosen: #{random_room}, Adj_room: #{adj_room_consume}"
-
         @rooms[adj_room_consume][:tiles].each do |tile|
-            puts "checking adj"
             tile[:sprite][:r] = @rooms[random_room][:tiles][0][:sprite][:r]
             tile[:sprite][:g] = @rooms[random_room][:tiles][0][:sprite][:g]
             @rooms[random_room][:tiles] << tile
         end
 
         @rooms.delete(adj_room_consume)
-        puts "removing"
+        @adj[random_room].delete(adj_room_consume)
 
-        puts @adj[random_room].delete(adj_room_consume)
         @adj[adj_room_consume].each do |adj_room|
+            @adj[adj_room].delete(adj_room_consume)
             if(adj_room != random_room)
-                @adj[adj_room].delete(adj_room_consume)
-                @adj[adj_room] << random_room 
+                if(!exists(adj_room, random_room))
+                    @adj[adj_room] << random_room 
+                end
+                if(!exists(random_room, adj_room))
+                    @adj[random_room] << adj_room
+                end
             end
-        end         
+        end
+
+        @adj.delete(adj_room_consume)
+
+        return true
+    end
+
+
+    def exists(index, value)
+        @adj[index].each do |child|
+            if(child == value)
+                return true
+            end
+        end
+
+        return false
+    end
+
+
+    def define_level_layout(min_room_count)
+        while(@rooms.size - 1 >= min_room_count)
+            if(!combine_rooms())
+                return
+            end
+        end
+    end
+
+
+    def place_walls()
+        @rooms.each do |room|
+        end
     end
 
 

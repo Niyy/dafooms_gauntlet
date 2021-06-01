@@ -49,6 +49,8 @@ class Game
             size: {x: 20, y: 20},
             min_room_size: [5, 5]
         })
+
+        @state.level_holder.define_level_layout(4)
     end
 
 
