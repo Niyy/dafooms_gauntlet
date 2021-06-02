@@ -40,7 +40,8 @@ class Level_Holder
                     tile: {
                         row: row, 
                         col: col
-                    }
+                    },
+                    border: false
                 }
 
                 assign_tile_to_room(min_room_size, @level[[row, col]], [row, col])
@@ -158,11 +159,15 @@ class Level_Holder
 
 
     def place_walls()
-        @rooms.values.each do |room|
-            room[:tiles].each_pair do |key, tile|
-                if(has_border?(room[:tiles], tile[:tile]))
+        @rooms.each_pair do |room_key, room|
+            room[:tiles].each_pair do |tile_key, tile|
+                #puts "#{room_key} adj list: #{@adj[room_key]}"
+                if(has_border?(room[:tiles], tile[:tile]) && ( 
+                !neighbor_has_border?(@adj[room_key], @rooms, tile[:tile]) ||
+                is_corner(room[:tiles], tile[:tile])))
                     tile[:sprite][:r] = 255
                     tile[:sprite][:g] = 255
+                    tile[:border] = true
                 end
             end
         end
@@ -179,6 +184,41 @@ class Level_Holder
         tiles.has_key?(down) && 
         tiles.has_key?(left) && 
         tiles.has_key?(right))
+    end
+
+
+    def neighbor_has_border?(adj_rooms, rooms, tile)
+        up = [tile[:row] + 1, tile[:col]]
+        down = [tile[:row] - 1, tile[:col]]
+        left = [tile[:row], tile[:col] - 1]
+        right = [tile[:row], tile[:col] + 1]
+
+        adj_rooms.values.each do |room|
+            details = rooms[room][:tiles]
+
+            if((details.has_key?(up) && details[up][:border]) ||
+            (details.has_key?(down) && details[down][:border]) ||
+            (details.has_key?(right) && details[right][:border]) ||
+            (details.has_key?(left) && details[left][:border]))
+                return true
+            end
+        end
+
+        return false
+    end
+
+
+    def is_corner(tiles, tile)
+        hits = 0
+        
+        (0...3).each do |y|
+            (0...3).each do |x|
+                hits += 1 if(tiles.has_key?([tile[:row] + y - 1, tile[:col] + x - 1])) 
+            end
+        end
+
+        return true if(hits == 4)
+        return false
     end
 
 
