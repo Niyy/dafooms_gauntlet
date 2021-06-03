@@ -17,32 +17,35 @@ class Level_Holder
         @size = !init_args[:size].nil? ? init_args[:size] : [10, 10]
         min_room_size = !init_args[:min_room_size].nil? ? 
             init_args[:min_room_size] : [5, 5]
-        @color_marks = [
-            (min_room_size[0] * 255) / dimensions[:x], 
-            (min_room_size[1] * 255) / dimensions[:y]
-        ]
         @width = @size[:x] / min_room_size[0]
         @height = @size[:y] / min_room_size[1]
 
         (0...size[:y]).each do |row|
             (0...size[:x]).each do |col|
-                @level[[row, col]] = {
-                    sprite: {
-                        x: col * dimensions[:x],
-                        y: row * dimensions[:y],
-                        w: dimensions[:x],
-                        h: dimensions[:y],
-                        path: "sprites/square/white.png",
-                        r: 0,
-                        g: 0,
-                        b: 0 
-                    },
-                    tile: {
-                        row: row, 
-                        col: col
-                    },
-                    border: false
-                }
+#                @level[[row, col]] = {
+#                    sprite: {
+#                        col: col,
+#                        row: row,
+#                        w_tile: dimensions[:x],
+#                        h_tile: dimensions[:y],
+#                        path: "sprites/square/white.png"
+#                    },
+#                    tile: {
+#                        row: row, 
+#                        col: col
+#                    },
+#                    border: false
+#                }
+                @level[[row, col]] = Tile.new(
+                    {
+                        col: col,
+                        row: row,
+                        w_tile: dimensions[:x],
+                        h_tile: dimensions[:y],
+                        path: "sprites/tile/basic_0000.png",
+                        prefix: "basic_"
+                    }
+                )
 
                 assign_tile_to_room(min_room_size, @level[[row, col]], [row, col])
             end
@@ -92,13 +95,10 @@ class Level_Holder
         room[:tiles] ||= {} 
         room[:x_median] ||= 0
         room[:y_median] ||= 0
-        room[:tiles][tile_coord] = tile
+        room[:tiles][tile.get_tile_position_array] = tile
 
-        tile[:sprite][:r] = (@color_marks[1] * room_col)
-        tile[:sprite][:g] = (@color_marks[0] * room_row)
-
-        room[:x_median] += tile[:sprite][:x]
-        room[:y_median] += tile[:sprite][:y]
+        room[:x_median] += tile.x
+        room[:y_median] += tile.y
     end
 
 
@@ -112,8 +112,6 @@ class Level_Holder
         tile_in_room = @rooms[random_room][:tiles].keys.sample()
 
         @rooms[adj_room_consume][:tiles].each_pair do |key, tile|
-            tile[:sprite][:r] = @rooms[random_room][:tiles][tile_in_room][:sprite][:r]
-            tile[:sprite][:g] = @rooms[random_room][:tiles][tile_in_room][:sprite][:g]
             @rooms[random_room][:tiles][key] = tile
         end
 
@@ -162,12 +160,14 @@ class Level_Holder
         @rooms.each_pair do |room_key, room|
             room[:tiles].each_pair do |tile_key, tile|
                 #puts "#{room_key} adj list: #{@adj[room_key]}"
-                if(has_border?(room[:tiles], tile[:tile]) && ( 
-                !neighbor_has_border?(@adj[room_key], @rooms, tile[:tile]) ||
-                is_corner(room[:tiles], tile[:tile])))
-                    tile[:sprite][:r] = 255
-                    tile[:sprite][:g] = 255
-                    tile[:border] = true
+                if(has_border?(room[:tiles], tile.get_tile_position_obj()) && ( 
+                !neighbor_has_border?(@adj[room_key], @rooms, 
+                    tile.get_tile_position_obj()) ||
+                is_corner(room[:tiles], tile.get_tile_position_obj())))
+                    tile.border = true
+
+                    tile.place_tile_on_grid(tile.left(@level), tile.right(@level),
+                        tile.down(@level), tile.up(@level))
                 end
             end
         end
@@ -196,10 +196,10 @@ class Level_Holder
         adj_rooms.values.each do |room|
             details = rooms[room][:tiles]
 
-            if((details.has_key?(up) && details[up][:border]) ||
-            (details.has_key?(down) && details[down][:border]) ||
-            (details.has_key?(right) && details[right][:border]) ||
-            (details.has_key?(left) && details[left][:border]))
+            if((details.has_key?(up) && details[up].border) ||
+            (details.has_key?(down) && details[down].border) ||
+            (details.has_key?(right) && details[right].border) ||
+            (details.has_key?(left) && details[left].border))
                 return true
             end
         end

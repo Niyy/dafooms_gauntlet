@@ -1,3 +1,6 @@
+require "app/grid_object.rb"
+require "app/sprite_grid_object.rb"
+require "app/tile.rb"
 require "app/base.rb"
 require "app/game.rb"
 require "app/unit.rb"

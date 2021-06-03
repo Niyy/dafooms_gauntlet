@@ -61,7 +61,7 @@ class Game
 
     def renders()
         @outputs.sprites << @state.level_holder.level.values.map do |tile|
-            tile[:sprite]        
+            tile        
         end
         @outputs.labels << @state.level_holder.rooms.to_a.map do |room|
             [
